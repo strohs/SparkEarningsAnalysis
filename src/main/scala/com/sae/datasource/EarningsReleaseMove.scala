@@ -8,4 +8,12 @@ import java.time.LocalDate
   * @param maxMovePrior - the maximum amount a price moved prior to earnings release date
   * @param maxMoveAfter - the maximum amount a price moved after an earnings release date
   */
-case class EarningsReleaseMove( earningsData:EarningsData, maxMovePrior:PriceMove, maxMoveAfter:PriceMove )
+case class EarningsReleaseMove( earningsData:EarningsData,
+                                maxMovePrior:PriceMove,
+                                maxMoveAfter:PriceMove )
+
+object EarningsReleaseMove {
+
+  implicit def orderingByEarningsData[A <: EarningsReleaseMove]: Ordering[A] =
+    Ordering.by( erm => erm.earningsData )
+}

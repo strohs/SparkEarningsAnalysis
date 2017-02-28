@@ -11,3 +11,12 @@ import java.time.{LocalDate}
   * Time: 2:44 PM
   */
 case class EarningsData( quote:String, releaseDate:LocalDate, qtr:Int )
+
+object EarningsData {
+
+  //ordering for Java Local Dates
+  implicit val localDateOrdering: Ordering[LocalDate] = Ordering.by( _.toEpochDay )
+
+  implicit def orderingByQtrRelDate[A <: EarningsData]: Ordering[EarningsData] =
+    Ordering.by( ed => ( ed.qtr, ed.releaseDate ) )
+}
