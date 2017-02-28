@@ -56,7 +56,7 @@ object Yahoo {
     val source = Source.fromURL( url )
     val lines = try source.getLines.drop(1).foldLeft( List[PriceData]() ) { ( lines, line ) =>
       val data = line.split(",")
-      PriceData( quote, LocalDate.parse( data(0) ), data( 6 ).toDouble ) +: lines
+      PriceData( quote, LocalDate.parse( data(0) ), data( 4 ).toDouble, data(6).toDouble ) +: lines
     } finally source.close()
     lines
   }

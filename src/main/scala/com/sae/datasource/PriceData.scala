@@ -9,4 +9,4 @@ import java.time.LocalDate
   * Date: 2/21/2017
   * Time: 2:55 PM
   */
-case class PriceData( quote:String, date:LocalDate, close:Double )
+case class PriceData( quote:String, date:LocalDate, close:Double, adjClose:Double )
