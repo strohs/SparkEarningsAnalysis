@@ -1,5 +1,6 @@
 package com.sae
 
+import java.sql.Date
 import java.time._
 
 import com.sae.analyzer.MoveAnalyzer
@@ -15,6 +16,9 @@ import com.sae.datasource._
   * Time: 6:02 PM
   */
 object Main {
+
+  implicit def localDate2SqlDate( d: LocalDate ): java.sql.Date = java.sql.Date.valueOf( d )
+  implicit def date2SqlDate( d:Date ): LocalDate = d.toLocalDate
 
   val LOOK_BACK_YEARS = 4
   val LOOK_BEFORE_DAYS = 21

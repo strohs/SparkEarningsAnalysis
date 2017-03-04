@@ -1,5 +1,6 @@
 package com.sae.datasource
 
+import java.sql.Date
 import java.time.LocalDate
 
 /**
@@ -8,4 +9,4 @@ import java.time.LocalDate
   * @param end the date the move ended
   * @param amount amount of the move
   */
-case class PriceMove( start:LocalDate, end:LocalDate, amount:Double )
+case class PriceMove( start:Date, end:Date, amount:Double )
