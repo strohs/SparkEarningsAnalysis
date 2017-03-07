@@ -2,10 +2,13 @@ package com.sae
 
 import java.sql.Date
 import java.time.LocalDate
+import java.util
 
 import com.sae.analyzer.MoveAnalyzer
-import com.sae.datasource.{PriceData, Yahoo, Zacks}
-import org.apache.spark.sql.{Encoders, SparkSession}
+import com.sae.datasource._
+import org.apache.spark.sql.{Dataset, Encoders, SparkSession}
+
+import scala.collection.immutable.HashMap
 
 
 /**
@@ -13,7 +16,13 @@ import org.apache.spark.sql.{Encoders, SparkSession}
   */
 object EarningsTrendDS {
 
+  //needed to convert LocalDate(s) to SQL Dates for use in DataSets
+  implicit def localDate2SqlDate( d: LocalDate ): java.sql.Date = java.sql.Date.valueOf( d )
+  implicit def date2SqlDate( d:Date ): LocalDate = d.toLocalDate
 
+
+  //for some reason this in needed in Spark 2.1.0 to force encoding of java.sql.Date. According to Spark docs, it should have been handled implicitly
+  implicit val encodeDate = org.apache.spark.sql.Encoders.DATE
 
   def main(args: Array[String]): Unit = {
 
@@ -32,25 +41,41 @@ object EarningsTrendDS {
     // For implicit conversions like converting RDDs to DataFrames
     import spark.implicits._
 
+    //get price data for the last (LOOK_BACK_YEARS) worth of data
     val pricesRaw = Yahoo.getDailyPrices( quote, startDate, NOW )
-    println(s"read ${pricesRaw.length} prices from Yahoo")
+    val pricesDS = spark.createDataset( pricesRaw )
+    //println( pricesDS.show() )
 
-    val earningsRaw = Zacks.getEarningsDates( quote )
-    println(s"read ${earningsRaw.length} earnings release dates")
+    //get earnings releases data from our datsource and only use dates from the previous 4 years
+    val earningsDS = Zacks.getEarningsDates( quote ).toDS
+      .filter( s"releaseDate BETWEEN '${fourYearsAgo}' AND '${endOfLastYear}'" )
 
-    val prices = pricesRaw.toDS()
-    println( prices.show() )
-    val earningsDates = earningsRaw.toDS()
-    println( earningsDates.show() )
+    //convert the dataset into a Map of earnings Releases by quarter  Map[qtr,EarningsData]
+    val earningsMap = earningsDS.map( ed => ed.qtr -> ed )
+      .collect()
+      .groupBy(_._1).map { case (k,v) => ( k, v.map(_._2) ) }
 
-    //get earnings from the last 3 years and don't include the current year
-    val earningsDS = earningsDates.filter(s"releaseDate > '${Date.valueOf(fourYearsAgo)}' AND releaseDate < '${Date.valueOf(endOfLastYear)}'")
-      .sort("qtr","releaseDate")
 
-    val es = earningsDS.groupByKey( ed => (ed.qtr, ed.releaseDate ) )
+    val results:Iterable[EarningsReleaseMove] = for ( qtr <- earningsMap.keys;
+          earningsData <- earningsMap(qtr) ) yield {
+      val begin = earningsData.releaseDate.minusWeeks( MoveAnalyzer.LOOK_BEFORE_WEEKS )
+      val end = earningsData.releaseDate.plusWeeks( MoveAnalyzer.LOOK_AFTER_WEEKS )
+      val prices = pricesDS.filter(s"date BETWEEN '$begin' AND '$end'").collect().toList
+      val maxMoves = MoveAnalyzer.maxMovesAroundDate( earningsData.releaseDate, prices )
+      EarningsReleaseMove( earningsData, maxMoves._1, maxMoves._2 )
+    }
+    results.toList.sorted.foreach( println )
 
-    val arr = es.mapGroups( (k,vs) => (k._1, k._2, vs.toList) ).collect()
-    //arr.foreach{ case ((q,rd, rds)) => println(s"qtr:$q  rd:$rd  dates:${rds.length}") }
+    // qtr, relDate, bMoveStart, bMoveEnd, bMove, aMoveStart, aMoveEnd, aMove
+    //MAY have to convert negative move values to positive
+    val resultsDF = results.map { erm =>
+      ResultDF(erm.earningsData.qtr, erm.earningsData.releaseDate, erm.maxMovePrior.start,
+        erm.maxMovePrior.end, Math.abs(erm.maxMovePrior.amount), erm.maxMoveAfter.start, erm.maxMoveAfter.end,
+        Math.abs(erm.maxMoveAfter.amount) )
+    }.toList.toDF().sort($"qtr",$"relDate")
+
+    println( resultsDF.show() )
+    resultsDF.coalesce(1).write.option("header","true").csv("/home/cliff/wmtMoves.csv")
   }
 
 }

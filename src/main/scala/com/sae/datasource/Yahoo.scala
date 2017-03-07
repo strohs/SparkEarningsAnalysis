@@ -59,6 +59,7 @@ object Yahoo {
       val data = line.split(",")
       PriceData( quote, Date.valueOf( LocalDate.parse( data(0) )), data( 4 ).toDouble, data(6).toDouble ) +: lines
     } finally source.close()
+    println(s"read ${lines.length} prices from Yahoo")
     lines
   }
 

@@ -5,6 +5,7 @@ import java.time.LocalDate
 
 import com.sae.DateUtils
 import com.sae.datasource.{PriceData, PriceMove}
+import org.apache.spark.sql.Dataset
 
 /**
   * functions to compute how much at price moves within a date range or within multiple date ranges. These functions
@@ -15,9 +16,11 @@ import com.sae.datasource.{PriceData, PriceMove}
   */
 object MoveAnalyzer {
 
-  val LOOK_BACK_YEARS = 3
+  val LOOK_BACK_YEARS = 4
   val LOOK_BEFORE_WEEKS = 4
   val LOOK_AFTER_WEEKS = 4
+
+
 
   /**
     * determines how much a price moved starting from the beginning of priceData to the end
