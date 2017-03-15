@@ -15,6 +15,7 @@ import org.apache.spark.sql.Dataset
   * Time: 1:34 PM
   */
 object MoveAnalyzer {
+  implicit def localDate2SqlDate( d: LocalDate ): java.sql.Date = java.sql.Date.valueOf( d )
 
   val LOOK_BACK_YEARS = 4
   val LOOK_BEFORE_WEEKS = 4
@@ -92,5 +93,22 @@ object MoveAnalyzer {
     (maxBefore, maxAfter)
   }
 
-  
+  /**
+    * find the greatest magnitude of price movement within the a List of PriceData
+    * @param priceData - sorted list (by date) of PriceData
+    * @return PriceMove containing details of the maximum move
+    */
+  def maxMove( priceData: List[PriceData] ): PriceMove = {
+    if ( priceData.nonEmpty ) {
+      val minPrice = priceData.min( PriceData.orderingByClosingPrice )
+      val maxPrice = priceData.max( PriceData.orderingByClosingPrice )
+      if (minPrice.date.toLocalDate.isBefore( maxPrice.date.toLocalDate) )
+        PriceMove( minPrice.date, maxPrice.date, maxPrice.close - minPrice.close )
+      else
+        PriceMove( maxPrice.date, minPrice.date,  Math.abs( minPrice.close - maxPrice.close ) )
+    } else {
+      PriceMove( LocalDate.of(1970,1,1), LocalDate.of(1970,1,2), 0.0)
+    }
+
+  }
 }

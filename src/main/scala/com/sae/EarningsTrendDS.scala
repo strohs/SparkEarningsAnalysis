@@ -4,6 +4,7 @@ import java.sql.Date
 import java.time.LocalDate
 import java.util
 
+import breeze.linalg.max
 import com.sae.analyzer.MoveAnalyzer
 import com.sae.datasource._
 import org.apache.spark.sql.{Dataset, Encoders, SparkSession}
@@ -50,7 +51,7 @@ object EarningsTrendDS {
     val earningsDS = Zacks.getEarningsDates( quote ).toDS
       .filter( s"releaseDate BETWEEN '${fourYearsAgo}' AND '${endOfLastYear}'" )
 
-    //convert the dataset into a Map of earnings Releases by quarter  Map[qtr,EarningsData]
+    //convert the dataset into a Map of earnings Releases by quarter:  Map[qtr,List[EarningsData]]
     val earningsMap = earningsDS.map( ed => ed.qtr -> ed )
       .collect()
       .groupBy(_._1).map { case (k,v) => ( k, v.map(_._2) ) }
@@ -60,9 +61,14 @@ object EarningsTrendDS {
           earningsData <- earningsMap(qtr) ) yield {
       val begin = earningsData.releaseDate.minusWeeks( MoveAnalyzer.LOOK_BEFORE_WEEKS )
       val end = earningsData.releaseDate.plusWeeks( MoveAnalyzer.LOOK_AFTER_WEEKS )
-      val prices = pricesDS.filter(s"date BETWEEN '$begin' AND '$end'").collect().toList
-      val maxMoves = MoveAnalyzer.maxMovesAroundDate( earningsData.releaseDate, prices )
-      EarningsReleaseMove( earningsData, maxMoves._1, maxMoves._2 )
+
+      val pricesBefore = pricesDS.filter(s"date BETWEEN '$begin' AND '${earningsData.releaseDate.minusDays(1)}'")
+        .collect().toList
+      val pricesAfter = pricesDS.filter(s"date BETWEEN '${earningsData.releaseDate.plusDays(1)}' AND '$end'")
+        .collect().toList
+      val maxBefore = MoveAnalyzer.maxMove( pricesBefore )
+      val maxAfter = MoveAnalyzer.maxMove( pricesAfter )
+      EarningsReleaseMove( earningsData, maxBefore, maxAfter )
     }
     results.toList.sorted.foreach( println )
 
@@ -75,7 +81,7 @@ object EarningsTrendDS {
     }.toList.toDF().sort($"qtr",$"relDate")
 
     println( resultsDF.show() )
-    resultsDF.coalesce(1).write.option("header","true").csv("/home/cliff/wmtMoves.csv")
+    resultsDF.coalesce(1).write.option("header","true").csv(s"/home/cliff/$quote.csv")
   }
 
 }
