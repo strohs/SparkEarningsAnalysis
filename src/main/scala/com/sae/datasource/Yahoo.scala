@@ -1,5 +1,6 @@
 package com.sae.datasource
 
+import java.sql.Date
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -56,8 +57,9 @@ object Yahoo {
     val source = Source.fromURL( url )
     val lines = try source.getLines.drop(1).foldLeft( List[PriceData]() ) { ( lines, line ) =>
       val data = line.split(",")
-      PriceData( quote, LocalDate.parse( data(0) ), data( 4 ).toDouble, data(6).toDouble ) +: lines
+      PriceData( quote, Date.valueOf( LocalDate.parse( data(0) )), data( 4 ).toDouble, data(6).toDouble ) +: lines
     } finally source.close()
+    println(s"read ${lines.length} prices from Yahoo")
     lines
   }
 

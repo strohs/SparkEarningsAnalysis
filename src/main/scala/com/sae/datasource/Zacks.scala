@@ -3,7 +3,7 @@ package com.sae.datasource
 import java.text.SimpleDateFormat
 import java.time.{LocalDate, MonthDay, YearMonth}
 import java.time.format.DateTimeFormatter
-import java.util.Date
+import java.sql.Date
 
 import play.api.libs.json.Json
 
@@ -43,7 +43,7 @@ object Zacks {
 
       val jsonList:List[List[String]] = (json \\ "earnings_announcements_earnings_table")(0).as[List[List[String]]]
       jsonList.map { js => EarningsData( quote.toUpperCase(),
-        LocalDate.parse( js(0), DateTimeFormatter.ofPattern("M/d/uuuu") ),
+        Date.valueOf( LocalDate.parse( js(0), DateTimeFormatter.ofPattern("M/d/uuuu") ) ),
         YearMonth.parse( js(1), DateTimeFormatter.ofPattern("M/uuuu") ).getMonth.firstMonthOfQuarter().getValue / 3 + 1 )
       }
     } finally source.close()
