@@ -60,7 +60,7 @@ the Columns are as follows:
 * aMoveStart,aMoveEnd,aMove - exactly like the bMove* data except these are for four weeks after the earnings release 
 
 Sample bar plot done in R-Studio, showing the maximum price moves per quarter:
-![alt text](https://github.com/strohs/stock-chart/blob/master/Rplot.jpg "")
+![alt text](https://github.com/strohs/SparkEarningsAnalysis/blob/master/Rplot.jpg "")
 
 ### Bugs 
 Code is provided as is. Yahoo routinely changes their free quotes api, so data may become unavailable.
