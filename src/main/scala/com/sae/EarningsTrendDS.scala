@@ -81,7 +81,8 @@ object EarningsTrendDS {
     }.toList.toDF().sort($"qtr",$"relDate")
 
     println( resultsDF.show() )
-    resultsDF.coalesce(1).write.option("header","true").csv(s"/home/cliff/$quote.csv")
+    //save generated data as a .csv in users home directory
+    resultsDF.coalesce(1).write.option("header","true").csv(s"~/$quote.csv")
   }
 
 }

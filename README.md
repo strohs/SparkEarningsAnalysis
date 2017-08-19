@@ -1,9 +1,11 @@
 # Spark Earnings Analysis
-A spark app that I used to learn the fundamentals of the Apache Spark API.
+A spark app that I used to learn the fundamentals of the Apache Spark API (2.1.0)
   
 The overall goal of the app is to find the maximum price move a company's stock makes (historically, in each quarter) before and 
 after an earnings release date. Stock Price closing data is retrieved for the last four years from Yahoo Finance. Earnings release date information 
 is pulled for the last four years from Zacks.com website.
+
+<b>Note</b> Yahoo routinely changes their free, historical quotes API, so the app may fail to retrieve daily closing prices.
 
 ## Installation
 Clone this project and then use the "sbt assembly" command to build the application jar file. The jar can then be
@@ -57,9 +59,11 @@ the Columns are as follows:
 * bMove - the dollar amount of the move that occured between bMoveStart and bMoveEnd
 * aMoveStart,aMoveEnd,aMove - exactly like the bMove* data except these are for four weeks after the earnings release 
 
+Sample bar plot done in R-Studio, showing the maximum price moves per quarter:
+![alt text](https://github.com/strohs/stock-chart/blob/master/Rplot.jpg "")
 
 ### Bugs 
-Code is provided as is. This was mainly a learning experience in order to better understand the Spark API(s)
+Code is provided as is. Yahoo routinely changes their free quotes api, so data may become unavailable.
 
 ## License
 Distributed under the Eclipse Public License
